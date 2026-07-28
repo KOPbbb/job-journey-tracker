@@ -1,5 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import {
+  CalendarDays,
   CheckCircle2,
   ChevronDown,
   LayoutGrid,
@@ -22,7 +23,7 @@ import { UpcomingRail } from './components/UpcomingRail.jsx'
 import { ACTIVE_INTERVIEW_STATUSES, CLOSED_STATUSES, STATUSES } from './data/constants.js'
 import { useApplications } from './hooks/useApplications.js'
 import { useResumes } from './hooks/useResumes.js'
-import { isSameMonth, isSoon } from './utils/format.js'
+import { isSameMonth, isSoon, toLocalDateInput } from './utils/format.js'
 
 const PAGE_COPY = {
   records: ['投递记录', '把每一次尝试，都认真记下来。'],
@@ -59,7 +60,26 @@ function SearchBox({ value, onChange, placeholder = '搜索企业或岗位' }) {
   )
 }
 
-function RecordsToolbar({ query, status, onQueryChange, onStatusChange, onBoardView }) {
+function reminderDateKey(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '' : toLocalDateInput(date)
+}
+
+function isRelevantOnDate(application, date) {
+  return !date || application.appliedDate === date || reminderDateKey(application.reminderAt) === date
+}
+
+function RecordsToolbar({
+  query,
+  status,
+  selectedDate,
+  onQueryChange,
+  onStatusChange,
+  onDateChange,
+  onClearDate,
+  onBoardView,
+}) {
   return (
     <div className="records-toolbar">
       <div className="toolbar-filters">
@@ -71,6 +91,20 @@ function RecordsToolbar({ query, status, onQueryChange, onStatusChange, onBoardV
           </select>
           <ChevronDown size={16} aria-hidden="true" />
         </label>
+        <label className="date-filter">
+          <CalendarDays size={17} aria-hidden="true" />
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(event) => onDateChange(event.target.value)}
+            aria-label="按日期查看"
+          />
+        </label>
+        {selectedDate ? (
+          <button className="clear-date-filter" type="button" onClick={onClearDate}>
+            清除日期
+          </button>
+        ) : null}
       </div>
       <div className="view-switch" aria-label="切换视图">
         <button className="selected" type="button"><List size={18} />列表</button>
@@ -102,6 +136,7 @@ export default function App() {
   const [activePage, setActivePage] = useState('records')
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [dateFilter, setDateFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [draftAppliedDate, setDraftAppliedDate] = useState('')
@@ -225,8 +260,9 @@ export default function App() {
     const normalizedQuery = deferredQuery.trim().toLocaleLowerCase('zh-CN')
     return applications
       .filter((item) => {
+        const matchesDate = isRelevantOnDate(item, dateFilter)
         const matchesStatus = statusFilter === 'all' || item.status === statusFilter
-        if (!matchesStatus) return false
+        if (!matchesDate || !matchesStatus) return false
         if (!normalizedQuery) return true
         return `${item.company} ${item.role} ${item.channel} ${item.location} ${item.notes} ${resumeNames.get(item.resumeId) ?? ''}`
           .toLocaleLowerCase('zh-CN')
@@ -237,14 +273,26 @@ export default function App() {
         const dateB = b.appliedDate || b.updatedAt || ''
         return dateB.localeCompare(dateA)
       })
-  }, [applications, deferredQuery, resumeNames, statusFilter])
+  }, [applications, dateFilter, deferredQuery, resumeNames, statusFilter])
+
+  const metricApplications = useMemo(
+    () => applications.filter((item) => isRelevantOnDate(item, dateFilter)),
+    [applications, dateFilter],
+  )
 
   const metrics = useMemo(() => ({
-    month: applications.filter((item) => isSameMonth(item.appliedDate)).length,
-    interviews: applications.filter((item) => ACTIVE_INTERVIEW_STATUSES.has(item.status)).length,
-    followUps: applications.filter((item) => isSoon(item.reminderAt) && !CLOSED_STATUSES.has(item.status)).length,
-    offers: applications.filter((item) => item.status === 'Offer').length,
-  }), [applications])
+    month: dateFilter
+      ? metricApplications.length
+      : applications.filter((item) => isSameMonth(item.appliedDate)).length,
+    interviews: metricApplications.filter((item) => ACTIVE_INTERVIEW_STATUSES.has(item.status)).length,
+    followUps: metricApplications.filter((item) => isSoon(item.reminderAt) && !CLOSED_STATUSES.has(item.status)).length,
+    offers: metricApplications.filter((item) => item.status === 'Offer').length,
+  }), [applications, dateFilter, metricApplications])
+
+  const viewDateRecords = useCallback((date) => {
+    setDateFilter(date)
+    setActivePage('records')
+  }, [])
 
   const [title, subtitle] = PAGE_COPY[activePage]
   const showCreate = activePage !== 'backup'
@@ -274,18 +322,21 @@ export default function App() {
         {activePage === 'records' ? (
           <div className="records-layout">
             <div className="records-center">
-              <SummaryBand metrics={metrics} />
+              <SummaryBand metrics={metrics} scope={dateFilter ? 'day' : 'month'} />
               <RecordsToolbar
                 query={query}
                 status={statusFilter}
+                selectedDate={dateFilter}
                 onQueryChange={setQuery}
                 onStatusChange={setStatusFilter}
+                onDateChange={setDateFilter}
+                onClearDate={() => setDateFilter('')}
                 onBoardView={() => setActivePage('kanban')}
               />
               <ApplicationTable
                 applications={filteredApplications}
                 resumeNames={resumeNames}
-                filtered={Boolean(query || statusFilter !== 'all')}
+                filtered={Boolean(query || statusFilter !== 'all' || dateFilter)}
                 onAdd={openCreate}
                 onEdit={openEdit}
                 onDelete={removeApplication}
@@ -296,7 +347,14 @@ export default function App() {
         ) : null}
 
         {activePage === 'daily' ? (
-          <DailyView applications={applications} onAdd={openCreate} onEdit={openEdit} />
+          <DailyView
+            applications={applications}
+            selectedDate={dateFilter}
+            onDateChange={setDateFilter}
+            onViewDay={viewDateRecords}
+            onAdd={openCreate}
+            onEdit={openEdit}
+          />
         ) : null}
 
         {activePage === 'resumes' ? (

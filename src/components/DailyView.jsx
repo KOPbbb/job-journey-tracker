@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   BellRing,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   ClipboardPlus,
+  ListFilter,
   Plus,
 } from 'lucide-react'
 import { toLocalDateInput } from '../utils/format.js'
@@ -97,38 +98,48 @@ function buildEvents(applications) {
   return eventMap
 }
 
-export function DailyView({ applications, onAdd, onEdit }) {
+export function DailyView({ applications, selectedDate, onDateChange, onViewDay, onAdd, onEdit }) {
   const todayKey = dateKey(new Date())
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const today = new Date()
     return new Date(today.getFullYear(), today.getMonth(), 1)
   })
-  const [selectedKey, setSelectedKey] = useState(todayKey)
   const eventsByDate = useMemo(() => buildEvents(applications), [applications])
   const cells = useMemo(() => monthCells(visibleMonth), [visibleMonth])
+  const selectedKey = selectedDate || todayKey
   const selectedEvents = eventsByDate.get(selectedKey) ?? []
   const monthTitle = new Intl.DateTimeFormat('zh-CN', {
     year: 'numeric',
     month: 'long',
   }).format(visibleMonth)
 
+  useEffect(() => {
+    if (!selectedDate) return
+    const selected = dateFromKey(selectedDate)
+    setVisibleMonth((current) => (
+      current.getFullYear() === selected.getFullYear() && current.getMonth() === selected.getMonth()
+        ? current
+        : new Date(selected.getFullYear(), selected.getMonth(), 1)
+    ))
+  }, [selectedDate])
+
   const changeMonth = (offset) => {
     const next = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + offset, 1)
     setVisibleMonth(next)
-    setSelectedKey(dateKey(next))
+    onDateChange(dateKey(next))
   }
 
   const selectDay = (cell) => {
     if (!cell.inMonth) {
       setVisibleMonth(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1))
     }
-    setSelectedKey(cell.key)
+    onDateChange(cell.key)
   }
 
   const selectToday = () => {
     const today = new Date()
     setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1))
-    setSelectedKey(dateKey(today))
+    onDateChange(dateKey(today))
   }
 
   return (
@@ -214,6 +225,10 @@ export function DailyView({ applications, onAdd, onEdit }) {
             <button className="button secondary compact" type="button" onClick={() => onAdd(selectedKey)}><Plus size={16} />新增投递</button>
           </div>
         )}
+
+        <button className="agenda-view-records" type="button" onClick={() => onViewDay(selectedKey)}>
+          <ListFilter size={16} />只看这一天的信息
+        </button>
 
         {selectedEvents.length ? (
           <button className="agenda-add" type="button" onClick={() => onAdd(selectedKey)}><Plus size={16} />在这一天新增投递</button>

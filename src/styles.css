@@ -441,6 +441,54 @@ textarea:focus-visible {
   pointer-events: none;
 }
 
+.date-filter {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: #6c7c94;
+}
+
+.date-filter > svg {
+  position: absolute;
+  left: 13px;
+  pointer-events: none;
+}
+
+.date-filter input {
+  width: 154px;
+  min-height: 44px;
+  padding: 0 10px 0 38px;
+  color: #273c5e;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.date-filter input:focus {
+  border-color: #90b8f6;
+  outline: 0;
+  box-shadow: 0 0 0 3px rgb(39 120 239 / 11%);
+}
+
+.clear-date-filter {
+  min-height: 36px;
+  padding: 0 8px;
+  color: #61738d;
+  background: transparent;
+  border: 0;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.clear-date-filter:hover {
+  color: #315d8f;
+  text-decoration: underline;
+}
+
 .view-switch {
   display: flex;
   flex: 0 0 auto;
@@ -1362,6 +1410,29 @@ textarea:focus-visible {
 .agenda-add:hover {
   color: #335f91;
   background: #f0f6fd;
+  border-color: #8eafd2;
+}
+
+.agenda-view-records {
+  display: flex;
+  width: 100%;
+  min-height: 39px;
+  margin-top: 16px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #4e719d;
+  background: #fff;
+  border: 1px solid #c9d7e6;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.agenda-view-records:hover {
+  color: #335f91;
+  background: #f5f9fd;
   border-color: #8eafd2;
 }
 
@@ -2297,6 +2368,7 @@ textarea:focus-visible {
 
   .toolbar-filters {
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .search-box {
@@ -2400,6 +2472,14 @@ textarea:focus-visible {
   }
 
   .filter-select select {
+    width: 100%;
+  }
+
+  .date-filter {
+    flex: 1 1 154px;
+  }
+
+  .date-filter input {
     width: 100%;
   }
 

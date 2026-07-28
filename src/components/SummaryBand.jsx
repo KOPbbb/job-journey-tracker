@@ -7,7 +7,7 @@ const METRIC_CONFIG = [
   { key: 'offers', label: '收到 Offer', icon: Gift, tone: 'violet' },
 ]
 
-export function SummaryBand({ metrics }) {
+export function SummaryBand({ metrics, scope = 'month' }) {
   return (
     <section className="summary-band" aria-label="求职进度概览">
       {METRIC_CONFIG.map((item) => {
@@ -18,7 +18,7 @@ export function SummaryBand({ metrics }) {
               <Icon size={24} strokeWidth={1.8} />
             </div>
             <div>
-              <p>{item.label}</p>
+              <p>{item.key === 'month' && scope === 'day' ? '当日相关机会' : item.label}</p>
               <strong>{metrics[item.key]}</strong>
             </div>
           </div>
