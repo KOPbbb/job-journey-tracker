@@ -32,7 +32,7 @@ jobs:
         run: npm ci
 
       - name: Build Windows installer
-        run: npm run package:win -- --publish never
+        run: npm run package:win
 
       - name: Attach installer to the GitHub Release
         env:
