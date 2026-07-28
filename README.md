@@ -1,14 +1,22 @@
 # 求职轨迹
 
-一款可在 Mac 上直接打开的本地求职投递管理工具。它帮助你记录每一次投递、关联使用的简历版本，并按日历查看后续安排。
+一款可在 Mac 和 Windows 上直接打开的本地求职投递管理工具。它帮助你记录每一次投递、关联使用的简历版本，并按日历查看后续安排。
 
 ## 下载与安装（macOS）
 
-1. 前往仓库右侧的 **Releases**，下载最新版的 `求职轨迹-*-universal.dmg`。
+1. 前往仓库右侧的 **Releases**，下载最新版的 `job-journey-tracker-*-universal.dmg`。
 2. 双击 DMG，把“求职轨迹”拖进“应用程序”文件夹。
 3. 首次打开时，如果 macOS 提示无法验证开发者，请在“应用程序”里按住 Control 点击应用，选择“打开”。
 
-`universal` 安装包同时支持 Apple Silicon（M 系列）和 Intel Mac。v1.0.0 是未签名的独立发布版，数据只保存在使用者自己的电脑中。
+`universal` 安装包同时支持 Apple Silicon（M 系列）和 Intel Mac。
+
+## 下载与安装（Windows）
+
+1. 前往仓库右侧的 **Releases**，下载最新版的 `job-journey-tracker-*-setup.exe`。
+2. 双击安装程序，按提示选择安装位置后完成安装。
+3. 从桌面或开始菜单打开“求职轨迹”。
+
+当前提供 Windows 10/11 64 位安装包。尚未进行 Windows 代码签名时，SmartScreen 可能会提示风险；确认下载来源是本仓库后，可选择“更多信息”再运行。
 
 ## 功能
 
@@ -42,4 +50,10 @@ npm run build
 
 ```bash
 npm run package:mac
+```
+
+构建可发布的 Windows 安装程序：
+
+```bash
+npm run package:win
 ```
