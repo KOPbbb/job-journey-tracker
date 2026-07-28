@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.DS_Store
+
+# 本机生成的简历、渲染文件、个人照片和含个人信息的脚本不进入代码仓库。
+tmp/
+output/
+assets/
+scripts/
+design/
