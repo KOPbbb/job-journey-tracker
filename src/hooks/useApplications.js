@@ -1,37 +1,32 @@
-import { useCallback, useEffect, useState } from 'react'
-
-const STORAGE_KEY = 'job-journey-tracker'
-const STORAGE_VERSION = 2
-
-function readStorage() {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    const saved = JSON.parse(raw)
-    if (saved.version !== STORAGE_VERSION || !Array.isArray(saved.applications)) {
-      return []
-    }
-    return saved.applications
-  } catch {
-    return []
-  }
-}
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  allowApplicationWrites,
+  loadApplications,
+  persistApplications,
+} from '../utils/applicationStorage.js'
 
 function makeId() {
   return globalThis.crypto?.randomUUID?.() ?? `application-${Date.now()}`
 }
 
 export function useApplications() {
-  const [applications, setApplications] = useState(readStorage)
+  const [initialStorage] = useState(() => loadApplications(window.localStorage))
+  const [applications, setApplications] = useState(initialStorage.applications)
+  const canPersistRef = useRef(initialStorage.canPersist)
 
   useEffect(() => {
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ version: STORAGE_VERSION, applications }),
-    )
+    if (canPersistRef.current) persistApplications(window.localStorage, applications)
   }, [applications])
 
+  const prepareWrite = useCallback(() => {
+    if (!canPersistRef.current) {
+      allowApplicationWrites(window.localStorage)
+      canPersistRef.current = true
+    }
+  }, [])
+
   const addApplication = useCallback((values) => {
+    prepareWrite()
     const now = new Date().toISOString()
     const next = {
       ...values,
@@ -41,9 +36,10 @@ export function useApplications() {
     }
     setApplications((current) => [next, ...current])
     return next
-  }, [])
+  }, [prepareWrite])
 
   const updateApplication = useCallback((id, values) => {
+    prepareWrite()
     setApplications((current) =>
       current.map((item) =>
         item.id === id
@@ -51,13 +47,15 @@ export function useApplications() {
           : item,
       ),
     )
-  }, [])
+  }, [prepareWrite])
 
   const deleteApplication = useCallback((id) => {
+    prepareWrite()
     setApplications((current) => current.filter((item) => item.id !== id))
-  }, [])
+  }, [prepareWrite])
 
   const replaceApplications = useCallback((nextApplications) => {
+    prepareWrite()
     setApplications(
       nextApplications.map((item) => ({
         ...item,
@@ -66,11 +64,12 @@ export function useApplications() {
         updatedAt: new Date().toISOString(),
       })),
     )
-  }, [])
+  }, [prepareWrite])
 
   const clearApplications = useCallback(() => {
+    prepareWrite()
     setApplications([])
-  }, [])
+  }, [prepareWrite])
 
   return {
     applications,
@@ -79,5 +78,6 @@ export function useApplications() {
     deleteApplication,
     replaceApplications,
     clearApplications,
+    recoveryMessage: initialStorage.recoveryMessage,
   }
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 const DATABASE_NAME = 'job-journey-resumes'
-const DATABASE_VERSION = 1
+const DATABASE_VERSION = 2
 const STORE_NAME = 'resumes'
 const MAX_FILE_SIZE = 20 * 1024 * 1024
 
@@ -13,11 +13,19 @@ function openDatabase() {
     const request = window.indexedDB.open(DATABASE_NAME, DATABASE_VERSION)
     request.onupgradeneeded = () => {
       const database = request.result
+      // Schema changes are additive: existing resume files are never cleared during an update.
       if (!database.objectStoreNames.contains(STORE_NAME)) {
         database.createObjectStore(STORE_NAME, { keyPath: 'id' })
       }
     }
-    request.onsuccess = () => resolve(request.result)
+    request.onsuccess = () => {
+      const database = request.result
+      database.onversionchange = () => {
+        database.close()
+        databasePromise = undefined
+      }
+      resolve(database)
+    }
     request.onerror = () => reject(request.error ?? new Error('无法打开本地简历库。'))
   })
   return databasePromise

@@ -122,6 +122,7 @@ export default function App() {
     deleteApplication,
     replaceApplications,
     clearApplications,
+    recoveryMessage,
   } = useApplications()
   const {
     resumes,
@@ -150,6 +151,10 @@ export default function App() {
   }, [])
 
   const closeToast = useCallback(() => setToast(null), [])
+
+  useEffect(() => {
+    if (recoveryMessage) notify(recoveryMessage)
+  }, [notify, recoveryMessage])
   const closeModal = useCallback(() => {
     setModalOpen(false)
     setEditing(null)

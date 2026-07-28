@@ -42,7 +42,7 @@ export function BackupView({ applications, onReplace, onClear, onNotify }) {
         <span className="backup-icon"><Database size={25} /></span>
         <div>
           <h2>数据在你的电脑里</h2>
-          <p>软件不会上传你的求职信息。JSON 备份投递记录；简历文件可在“简历版本”中分别下载。</p>
+          <p>软件不会上传你的求职信息。升级会保留本机数据，并在写入前保留最近一次安全副本；JSON 备份投递记录，简历文件可在“简历版本”中分别下载。</p>
         </div>
         <strong>{applications.length} 条记录</strong>
       </section>
